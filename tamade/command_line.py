@@ -7,7 +7,6 @@ from parser import parse_c_source_to_intermediate, preprocessing_intermediate
 from parser import parse_intermediate
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
 
 
 def environment_check():
@@ -114,12 +113,19 @@ def create_options(parser):
     parser.add_argument(
         "--pretty-print", dest="pretty_print",
         action="store_true", default=False)
+    parser.add_argument(
+        "--verbose-level", dest="verbose_level", default="info",
+        choices=["critical", "error", "warning", "info", "debug", "notest"]
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(description="PHP ini setting extractor")
     create_options(parser)
     options = parser.parse_args()
+
+    log_level = getattr(logging, options.verbose_level.upper())
+    logging.basicConfig(level=log_level)
 
     start_parsing(
         options.stage,
