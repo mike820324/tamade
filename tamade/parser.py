@@ -34,7 +34,7 @@ def parse_c_source_to_intermediate(php_src_path):
         data represent the intermediate representation string.
     """
 
-    expression = '(?s)PHP_INI_BEGIN.*PHP_INI_END'
+    expression = '(?s)(ZEND|PHP)_INI_BEGIN.*(ZEND|PHP)_INI_END'
     command = 'ag --ignore "*.h" --nocolor --no-numbers "{0}" {1}'.format(
         expression, php_src_path)
     return subprocess.check_output(command, shell=True).decode("utf8")
@@ -140,17 +140,16 @@ def parse_define(info, code):
     except AttributeError:
         logging.error("[Parser]: Invalid Syntax -> {}".format(code))
 
-    folder = info.split("/")[-2]
-
     setting_name = raw_data_list[0]
     setting_value = raw_data_list[1]
+    section = "core" if "." not in setting_name else setting_name.split('.')[0]
     if '"' not in setting_name:
         logging.warning("[Parser]: name is not a string -> {}".format(code))
     if '"' not in setting_value and "NULL" != setting_value:
         logging.warning("[Parser]: value is not a string -> {}".format(code))
 
     setting_pair = {
-        "category": folder,
+        "section": section.strip("\""),
         "name": setting_name.strip("\""),
         "value": setting_value.strip("\"")
     }
@@ -163,11 +162,12 @@ def parse_line(line):
         info, code = line.split(":")
     except ValueError:
         logging.error("[Parser]: Invalid syntax -> {}".format(line))
+        return None
 
-    if "PHP_INI_BEGIN" in code:
-        pass
-    elif "PHP_INI_END" in code:
-        pass
+    if "PHP_INI_BEGIN" in code or "ZEND_INI_BEGIN" in code:
+        return None
+    elif "PHP_INI_END" in code or "ZEND_INI_END" in code:
+        return None
     else:
         return parse_define(info, code)
 
