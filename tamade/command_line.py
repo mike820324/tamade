@@ -61,7 +61,7 @@ def start_parsing(mode, php_src_path, out_file=None, ext_script_path=None, prett
     logging.info("[Main]: Transforming...")
     php_settings = parse_intermediate(preprocessed_intermediate_data)
 
-    logging.info("[Main]: Core Settings Number {}".format(
+    logging.info("[Main]: Total Settings Number {}".format(
         len(php_settings)))
 
     # If user has specify extension script,
