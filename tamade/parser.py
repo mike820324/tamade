@@ -6,7 +6,7 @@ from comments import Comments
 import logging
 
 
-def parse_c_source_to_intermediate(php_src_path, has_ag=False):
+def parse_c_source_to_intermediate(php_src_path, enable_ag):
     """Create intremediate format of php ini settings defination from c source code.
 
     The intermedate format is genereted by ag(the silver searcher)
@@ -47,14 +47,14 @@ def parse_c_source_to_intermediate(php_src_path, has_ag=False):
         data represent the intermediate representation string.
     """
 
-    if has_ag:
+    if enable_ag:
         ag_expression = '(?s)(ZEND|PHP)_INI_BEGIN.*(ZEND|PHP)_INI_END'
-        command = 'ag --ignore "*.h" --nocolor --no-numbers "{0}" {1}'.format(
+        command = 'ag -G "\c$." --nocolor --no-numbers "{0}" {1}'.format(
             ag_expression, php_src_path)
     else:
         grep_expression = '(?s)(ZEND|PHP)_INI_BEGIN.*(ZEND|PHP)_INI_END\(\)'
-        command = 'find {0} -iname "*.c" | xargs grep -Pzo "{1}"'.format(
-            php_src_path, grep_expression)
+        command = 'grep -Pzo "{0}" $(find {1} -name "*.c") || true'.format(
+            grep_expression, php_src_path)
 
     return subprocess.check_output(command, shell=True).decode("utf8")
 
@@ -184,6 +184,9 @@ def parse_line(line):
         logging.debug("[Preprocessor]: can not find ':'-> {}".format(line))
         code = line
 
+    if not code.strip():
+        return None
+
     if "PHP_INI_BEGIN" in code or "ZEND_INI_BEGIN" in code:
         return None
     elif "PHP_INI_END" in code or "ZEND_INI_END" in code:
@@ -195,11 +198,9 @@ def parse_line(line):
 def parse_intermediate(intermediate_data):
     setting_pairs = []
     raw_data = intermediate_data
-
     for raw_data_line in raw_data.split("\n"):
         setting_pair = parse_line(raw_data_line)
         if setting_pair is None:
             continue
         setting_pairs.append(setting_pair)
-
     return setting_pairs

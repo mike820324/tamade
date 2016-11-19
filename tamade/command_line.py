@@ -9,19 +9,6 @@ from parser import parse_intermediate
 import logging
 
 
-def environment_check():
-    """Check the necessary binary tools are installed
-
-    Todo:
-        Implement the detailed.
-
-    Return:
-        True: when environment checking passed
-        False: when environment checking failed
-    """
-    return True
-
-
 def load_script(filter_script_path):
     try:
         with open(filter_script_path) as fp:
@@ -39,10 +26,16 @@ def pretty_formatter(php_settings):
     return json.dumps(php_settings, sort_keys=True, indent=4)
 
 
-def start_parsing(mode, php_src_path, out_file=None, ext_script_path=None, pretty_print=False):
+def start_parsing(mode,
+                  php_src_path,
+                  out_file=None,
+                  ext_script_path=None,
+                  pretty_print=False,
+                  enable_ag=False):
+
     # Starting using ag to parse c source code to intermediate
     logging.info("[Main]: Parsing C source...")
-    intermediate_data = parse_c_source_to_intermediate(php_src_path)
+    intermediate_data = parse_c_source_to_intermediate(php_src_path, enable_ag)
     if mode == "intermediate":
         with open(out_file, "w") as fp:
             fp.write(intermediate_data.encode("utf8"))
@@ -101,22 +94,29 @@ def start_parsing(mode, php_src_path, out_file=None, ext_script_path=None, prett
 
 
 def create_options(parser):
-    parser.add_argument(
-        "--stage", dest="stage", default="compile",
+    parser.add_argument(dest="php_src_path")
+    advanced_group = parser.add_argument_group(
+        "Advanced Settings", "Advanced Configuration for tamade")
+    advanced_group.add_argument(
+        "--parsing-stage", dest="stage", default="compile",
         choices=["intermediate", "preprocessing", "compile"],
         help="Choose different parsing stage")
-    parser.add_argument(
+    advanced_group.add_argument(
         "--ext-script", dest="ext_script_path",
         help="Specify the extension script path")
-    parser.add_argument("--in-folder", dest="php_src_path", required=True)
+    advanced_group.add_argument(
+        "--enable-ag", dest="enable_ag",
+        action="store_true", default=False,
+        help="Use the silver searcher to boost transforming performance")
+
     parser.add_argument("--out-file", dest="out_file")
-    parser.add_argument(
-        "--pretty-print", dest="pretty_print",
-        action="store_true", default=False)
     parser.add_argument(
         "--verbose-level", dest="verbose_level", default="info",
         choices=["critical", "error", "warning", "info", "debug", "notest"]
     )
+    parser.add_argument(
+        "--pretty-print", dest="pretty_print",
+        action="store_true", default=False)
 
 
 def main():
@@ -131,4 +131,5 @@ def main():
         options.stage,
         options.php_src_path, options.out_file,
         options.ext_script_path,
-        options.pretty_print)
+        options.pretty_print,
+        options.enable_ag)
