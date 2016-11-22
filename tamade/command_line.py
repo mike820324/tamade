@@ -3,7 +3,8 @@ import copy
 import argparse
 import json
 
-from parser import parse_c_source_to_intermediate, preprocessing_intermediate
+from intermediate import IntermediateGenerator
+from preprosessor import preprocessing_intermediate
 from parser import parse_intermediate
 
 import logging
@@ -35,7 +36,15 @@ def start_parsing(mode,
 
     # Starting using ag to parse c source code to intermediate
     logging.info("[Main]: Parsing C source...")
-    intermediate_data = parse_c_source_to_intermediate(php_src_path, enable_ag)
+
+    if enable_ag:
+        _generator = "ag"
+    else:
+        _generator = "grep"
+
+    intermediate_data = IntermediateGenerator.generate(
+        php_src_path, generator=_generator)
+
     if mode == "intermediate":
         with open(out_file, "w") as fp:
             fp.write(intermediate_data.encode("utf8"))
