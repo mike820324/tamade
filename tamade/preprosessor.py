@@ -91,7 +91,7 @@ def preprocessing_intermediate(intermediate_data):
 
     data = preprocessing_intermediate_remove_comment(data)
     data = "\n".join(preprocessing_intermediate_remove_blank_line(data))
-    data = "\n".join(preprocessing_intermediate_combine_continue_line(data))
     data = "\n".join(preprocessing_intermediate_remove_c_define(data))
+    data = "\n".join(preprocessing_intermediate_combine_continue_line(data))
 
     return data
